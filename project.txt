@@ -1,0 +1,847 @@
+local v1 = game:GetService("ReplicatedStorage")
+local u2 = game:GetService("UserInputService")
+local u3 = game:GetService("RunService")
+local u4 = game:GetService("Players")
+local u5 = game:GetService("CollectionService")
+local v6 = {}
+local u7 = v1:WaitForChild("Remotes"):WaitForChild("Mechanics"):WaitForChild("cancelaction")
+local u8 = v1:WaitForChild("Remotes"):WaitForChild("Items"):WaitForChild("Twist of Fate"):WaitForChild("Fire")
+function v6.start(p9) --[[ Line: 16 ]]
+    --[[
+    Upvalues:
+        [1] = u4
+        [2] = u3
+        [3] = u5
+        [4] = u2
+        [5] = u8
+        [6] = u7
+    --]]
+    local v10 = p9.item
+    local u11 = assert(v10, "TwistOfFateClient.start: config.item is required")
+    local v12 = p9.equip
+    local u13 = assert(v12, "TwistOfFateClient.start: config.equip is required")
+    local u14 = p9.aimAnimationIds or {}
+    local u15 = p9.shootSuccessId
+    local u16 = p9.shootFailId
+    local u17 = p9.fireCooldown or 1
+    local u18 = p9.cameraDelayDuration or 0.5
+    local u19 = p9.targetOffset or Vector3.new(2, 0, -5)
+    local u20 = p9.smoothSpeed or 8
+    local u21 = u4.LocalPlayer
+    local u22 = u21.Character or u21.CharacterAdded:Wait()
+    local u23 = u22:WaitForChild("HumanoidRootPart")
+    local u24 = workspace.CurrentCamera
+    local u25 = u22:WaitForChild("Humanoid")
+    local u26 = {}
+    local u27 = nil
+    local u28 = nil
+    local function u35() --[[ Line: 39 ]]
+        --[[
+        Upvalues:
+            [1] = u26
+            [2] = u14
+            [3] = u25
+            [4] = u15
+            [5] = u27
+            [6] = u16
+            [7] = u28
+        --]]
+        u26 = {}
+        for _, v29 in ipairs(u14) do
+            local v30 = Instance.new("Animation")
+            v30.AnimationId = v29
+            local v31 = u26
+            local v32 = u25
+            table.insert(v31, v32:LoadAnimation(v30))
+        end
+        if u15 then
+            local v33 = Instance.new("Animation")
+            v33.AnimationId = u15
+            u27 = u25:LoadAnimation(v33)
+        end
+        if u16 then
+            local v34 = Instance.new("Animation")
+            v34.AnimationId = u16
+            u28 = u25:LoadAnimation(v34)
+        end
+    end
+    u35()
+    local function u37() --[[ Line: 60 ]]
+        --[[
+        Upvalues:
+            [1] = u26
+        --]]
+        for _, v36 in ipairs(u26) do
+            if not v36.IsPlaying then
+                v36:Play()
+            end
+        end
+    end
+    local u38 = 0
+    local u39 = false
+    local u40 = 0
+    local u41 = Vector3.new(0, 0, 0)
+    local u42 = false
+    local u43 = false
+    local u44 = false
+    local u45 = 0
+    local u46 = nil
+    local u47 = Color3.fromRGB(77, 77, 77)
+    local u48 = Color3.fromRGB(255, 255, 255)
+    local u49 = false
+    local u50 = {
+        ["pc"] = {},
+        ["mob"] = {}
+    }
+    local u51 = nil
+    local function u55(p52, p53) --[[ Line: 103 ]]
+        if p52 then
+            if p52:IsA("ImageLabel") or p52:IsA("ImageButton") then
+                p52.ImageColor3 = p53
+            end
+            local v54 = p52:FindFirstChild("icon")
+            if v54 and (v54:IsA("ImageLabel") or v54:IsA("ImageButton")) then
+                v54.ImageColor3 = p53
+            end
+        end
+    end
+    local function u59() --[[ Line: 114 ]]
+        --[[
+        Upvalues:
+            [1] = u49
+            [2] = u47
+            [3] = u48
+            [4] = u50
+            [5] = u55
+        --]]
+        local v56 = u49 and u47 or u48
+        for _, v57 in ipairs(u50.pc) do
+            u55(v57, v56)
+        end
+        for _, v58 in ipairs(u50.mob) do
+            u55(v58, v56)
+        end
+    end
+    local function u62() --[[ Line: 143 ]]
+        --[[
+        Upvalues:
+            [1] = u21
+            [2] = u22
+            [3] = u23
+        --]]
+        if u21:GetAttribute("IsDead") then
+            return true
+        end
+        if u22:GetAttribute("IsCarried") then
+            return true
+        end
+        if u22:GetAttribute("IsHooked") then
+            return true
+        end
+        if u23:HasTag("doing action") then
+            return true
+        end
+        local v60 = u22:FindFirstChild("CheckInterractable")
+        if v60 then
+            for _, v61 in ipairs({
+                "isVaulting",
+                "isSliding",
+                "isDroppingPallet",
+                "isRepairing",
+                "isHealing",
+                "isUnhooking",
+                "isExiting"
+            }) do
+                if v60:GetAttribute(v61) then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+    local function u80(p63) --[[ Line: 166 ]]
+        --[[
+        Upvalues:
+            [1] = u44
+            [2] = u45
+            [3] = u18
+            [4] = u42
+            [5] = u24
+            [6] = u23
+            [7] = u20
+            [8] = u41
+            [9] = u19
+            [10] = u43
+            [11] = u3
+        --]]
+        if u44 then
+            if u18 > tick() - u45 then
+                local v64 = u24.CFrame.LookVector
+                local v65 = u23.Position
+                local v66 = u23
+                local v67 = CFrame.new
+                local v68 = v64.X
+                local v69 = v64.Z
+                v66.CFrame = v67(v65, v65 + Vector3.new(v68, 0, v69).Unit * 900)
+                local v70 = -u20 * p63
+                u41 = u41:Lerp(u19, 1 - math.exp(v70))
+                u24.CFrame = u24.CFrame * CFrame.new(u41)
+                return
+            end
+            u44 = false
+            u42 = true
+        end
+        if u43 then
+            local v71 = u24.CFrame.LookVector
+            local v72 = u23.Position
+            local v73 = u23
+            local v74 = CFrame.new
+            local v75 = v71.X
+            local v76 = v71.Z
+            v73.CFrame = v74(v72, v72 + Vector3.new(v75, 0, v76).Unit * 900)
+            local v77 = -u20 * p63
+            u41 = u41:Lerp(u19, 1 - math.exp(v77))
+        elseif u42 then
+            local v78 = -u20 * p63
+            local v79 = 1 - math.exp(v78)
+            u41 = u41:Lerp(Vector3.new(), v79)
+            if u41.Magnitude < 0.01 then
+                u3:UnbindFromRenderStep("CameraTransition")
+                u3:UnbindFromRenderStep("CameraDelay")
+                u42 = false
+                u41 = Vector3.new()
+            end
+        end
+        u24.CFrame = u24.CFrame * CFrame.new(u41)
+    end
+    local u81 = nil
+    local function u86(p82) --[[ Line: 205 ]]
+        --[[
+        Upvalues:
+            [1] = u39
+            [2] = u38
+            [3] = u46
+            [4] = u43
+            [5] = u44
+            [6] = u81
+        --]]
+        local v83 = p82 or 1
+        u39 = true
+        local v84 = u38
+        local v85 = tick() + v83
+        u38 = math.max(v84, v85)
+        u46 = nil
+        if u43 or u44 then
+            u81(false)
+        end
+        task.delay(v83, function() --[[ Line: 213 ]]
+            --[[
+            Upvalues:
+                [1] = u39
+            --]]
+            u39 = false
+        end)
+    end
+    u81 = function(p87, p88) --[[ Line: 218 ]]
+        --[[
+        Upvalues:
+            [1] = u43
+            [2] = u42
+            [3] = u44
+            [4] = u51
+            [5] = u21
+            [6] = u5
+            [7] = u23
+            [8] = u26
+            [9] = u25
+            [10] = u45
+            [11] = u3
+            [12] = u13
+            [13] = u41
+            [14] = u80
+            [15] = u37
+        --]]
+        if p87 == u43 and not (u42 or u44) then
+            return
+        elseif p87 or not p88 then
+            u43 = p87
+            u3:UnbindFromRenderStep("ShiftLock")
+            u3:UnbindFromRenderStep("CameraTransition")
+            u3:UnbindFromRenderStep("CameraDelay")
+            if p87 then
+                if not u13.Playing then
+                    u13:Play()
+                end
+                u21.Character:SetAttribute("Aiming", true)
+                u41 = Vector3.new()
+                u42 = false
+                u44 = false
+                u5:AddTag(u23, "doing action")
+                u3:BindToRenderStep("ShiftLock", Enum.RenderPriority.Character.Value, u80)
+                u37()
+            else
+                if u51 then
+                    u51.Visible = false
+                end
+                u21.Character:SetAttribute("Aiming", false)
+                if u5:HasTag(u23, "doing action") then
+                    u5:RemoveTag(u23, "doing action")
+                end
+                u42 = true
+                u44 = false
+                u3:BindToRenderStep("CameraTransition", Enum.RenderPriority.Character.Value, u80)
+                for _, v89 in ipairs(u26) do
+                    if v89.IsPlaying then
+                        v89:Stop()
+                    end
+                end
+            end
+            u25.AutoRotate = not p87
+        else
+            u43 = false
+            if u51 then
+                u51.Visible = false
+            end
+            u21.Character:SetAttribute("Aiming", false)
+            if u5:HasTag(u23, "doing action") then
+                u5:RemoveTag(u23, "doing action")
+            end
+            for _, v90 in ipairs(u26) do
+                if v90.IsPlaying then
+                    v90:Stop()
+                end
+            end
+            u25.AutoRotate = true
+            u44 = true
+            u45 = tick()
+        end
+    end
+    local function u122(u91) --[[ Line: 266 ]]
+        --[[
+        Upvalues:
+            [1] = u50
+            [2] = u59
+            [3] = u51
+            [4] = u2
+            [5] = u62
+            [6] = u25
+            [7] = u40
+            [8] = u17
+            [9] = u46
+            [10] = u11
+            [11] = u43
+            [12] = u3
+            [13] = u13
+            [14] = u21
+            [15] = u41
+            [16] = u42
+            [17] = u44
+            [18] = u5
+            [19] = u23
+            [20] = u80
+            [21] = u37
+            [22] = u86
+            [23] = u49
+            [24] = u39
+            [25] = u38
+            [26] = u26
+            [27] = u24
+            [28] = u8
+            [29] = u27
+            [30] = u45
+        --]]
+        if u91:IsA("ImageButton") and u91.Name == "Gui-mob" then
+            local v92 = u50.mob
+            table.insert(v92, u91)
+            u59()
+            local v93 = u91:FindFirstChild("cancelaim")
+            if v93 then
+                u51 = v93
+                u51.Visible = false
+            else
+                u91.ChildAdded:Connect(function(p94) --[[ Line: 280 ]]
+                    --[[
+                    Upvalues:
+                        [1] = u51
+                    --]]
+                    if p94.Name == "cancelaim" and p94:IsA("ImageButton") then
+                        u51 = p94
+                        u51.Visible = false
+                    end
+                end)
+            end
+            u2.InputBegan:Connect(function(u95) --[[ Line: 287 ]]
+                --[[
+                Upvalues:
+                    [1] = u91
+                    [2] = u62
+                    [3] = u25
+                    [4] = u40
+                    [5] = u17
+                    [6] = u46
+                    [7] = u11
+                    [8] = u43
+                    [9] = u3
+                    [10] = u13
+                    [11] = u21
+                    [12] = u41
+                    [13] = u42
+                    [14] = u44
+                    [15] = u5
+                    [16] = u23
+                    [17] = u80
+                    [18] = u37
+                    [19] = u51
+                    [20] = u2
+                    [21] = u86
+                    [22] = u49
+                    [23] = u39
+                    [24] = u38
+                    [25] = u26
+                    [26] = u24
+                    [27] = u8
+                    [28] = u27
+                    [29] = u45
+                --]]
+                if u95.UserInputType == Enum.UserInputType.Touch then
+                    local v96 = u91.AbsolutePosition
+                    local v97 = u91.AbsoluteSize
+                    local v98 = v96.X + v97.X / 2
+                    local v99 = v96.Y + v97.Y / 2
+                    local v100 = v97.X
+                    local v101 = v97.Y
+                    local v102 = math.min(v100, v101) / 2 * 0.8
+                    local v103 = u95.Position.X - v98
+                    local v104 = u95.Position.Y - v99
+                    if v103 * v103 + v104 * v104 > v102 * v102 then
+                        return
+                    elseif u62() or u25.Health < u25.MaxHealth * 0.5 then
+                        return
+                    elseif tick() - u40 >= u17 then
+                        local u105 = false
+                        u46 = u11
+                        u43 = true
+                        u3:UnbindFromRenderStep("ShiftLock")
+                        u3:UnbindFromRenderStep("CameraTransition")
+                        u3:UnbindFromRenderStep("CameraDelay")
+                        if not u13.Playing then
+                            u13:Play()
+                        end
+                        u21.Character:SetAttribute("Aiming", true)
+                        u41 = Vector3.new()
+                        u42 = false
+                        u44 = false
+                        u5:AddTag(u23, "doing action")
+                        u3:BindToRenderStep("ShiftLock", Enum.RenderPriority.Character.Value, u80)
+                        u25.AutoRotate = false
+                        u37()
+                        if u51 then
+                            u51.Visible = true
+                        end
+                        local u111 = u2.InputChanged:Connect(function(p106) --[[ Line: 326 ]]
+                            --[[
+                            Upvalues:
+                                [1] = u95
+                                [2] = u105
+                                [3] = u51
+                            --]]
+                            if p106 == u95 then
+                                local v107 = p106.Position
+                                local v108
+                                if u51 and u51.Visible then
+                                    local v109 = u51.AbsolutePosition
+                                    local v110 = u51.AbsoluteSize
+                                    if v107.X >= v109.X and (v107.X <= v109.X + v110.X and v107.Y >= v109.Y) then
+                                        v108 = v107.Y <= v109.Y + v110.Y
+                                    else
+                                        v108 = false
+                                    end
+                                else
+                                    v108 = false
+                                end
+                                u105 = v108
+                            end
+                        end)
+                        local u112 = nil
+                        u112 = u2.InputEnded:Connect(function(p113) --[[ Line: 332 ]]
+                            --[[
+                            Upvalues:
+                                [1] = u95
+                                [2] = u112
+                                [3] = u111
+                                [4] = u51
+                                [5] = u105
+                                [6] = u86
+                                [7] = u49
+                                [8] = u39
+                                [9] = u38
+                                [10] = u21
+                                [11] = u5
+                                [12] = u23
+                                [13] = u26
+                                [14] = u43
+                                [15] = u42
+                                [16] = u44
+                                [17] = u3
+                                [18] = u80
+                                [19] = u40
+                                [20] = u17
+                                [21] = u24
+                                [22] = u8
+                                [23] = u46
+                                [24] = u27
+                                [25] = u25
+                                [26] = u45
+                            --]]
+                            if p113 == u95 then
+                                u112:Disconnect()
+                                u111:Disconnect()
+                                if u51 then
+                                    u51.Visible = false
+                                end
+                                if not u105 then
+                                    local v114 = p113.Position
+                                    local v115
+                                    if u51 and u51.Visible then
+                                        local v116 = u51.AbsolutePosition
+                                        local v117 = u51.AbsoluteSize
+                                        if v114.X >= v116.X and (v114.X <= v116.X + v117.X and v114.Y >= v116.Y) then
+                                            v115 = v114.Y <= v116.Y + v117.Y
+                                        else
+                                            v115 = false
+                                        end
+                                    else
+                                        v115 = false
+                                    end
+                                    if not v115 then
+                                        local v118 = tick()
+                                        if u49 or (u39 or v118 < u38) then
+                                            u21.Character:SetAttribute("Aiming", false)
+                                            if u5:HasTag(u23, "doing action") then
+                                                u5:RemoveTag(u23, "doing action")
+                                            end
+                                            for _, v119 in ipairs(u26) do
+                                                if v119.IsPlaying then
+                                                    v119:Stop()
+                                                end
+                                            end
+                                            u43 = false
+                                            u42 = true
+                                            u44 = false
+                                            u3:BindToRenderStep("CameraTransition", Enum.RenderPriority.Character.Value, u80)
+                                            return
+                                        elseif u17 <= v118 - u40 then
+                                            u40 = v118
+                                            u8:FireServer(u46, u24.CFrame.LookVector)
+                                            if u27 then
+                                                u27:Play()
+                                            end
+                                            u43 = false
+                                            u21.Character:SetAttribute("Aiming", false)
+                                            if u5:HasTag(u23, "doing action") then
+                                                u5:RemoveTag(u23, "doing action")
+                                            end
+                                            for _, v120 in ipairs(u26) do
+                                                if v120.IsPlaying then
+                                                    v120:Stop()
+                                                end
+                                            end
+                                            u25.AutoRotate = true
+                                            u44 = true
+                                            u45 = tick()
+                                        else
+                                            u21.Character:SetAttribute("Aiming", false)
+                                            if u5:HasTag(u23, "doing action") then
+                                                u5:RemoveTag(u23, "doing action")
+                                            end
+                                            for _, v121 in ipairs(u26) do
+                                                if v121.IsPlaying then
+                                                    v121:Stop()
+                                                end
+                                            end
+                                            u43 = false
+                                            u42 = true
+                                            u44 = false
+                                            u3:BindToRenderStep("CameraTransition", Enum.RenderPriority.Character.Value, u80)
+                                        end
+                                    end
+                                end
+                                u86(0.3)
+                            end
+                        end)
+                    end
+                else
+                    return
+                end
+            end)
+        end
+    end
+    local function u127(p123) --[[ Line: 393 ]]
+        --[[
+        Upvalues:
+            [1] = u122
+            [2] = u127
+        --]]
+        local v124 = p123:FindFirstChild("Controls")
+        if v124 then
+            for _, v125 in ipairs(v124:GetChildren()) do
+                u122(v125)
+            end
+            v124.ChildAdded:Connect(u122)
+        else
+            p123.ChildAdded:Connect(function(p126) --[[ Line: 401 ]]
+                --[[
+                Upvalues:
+                    [1] = u127
+                --]]
+                if p126.Name == "Controls" then
+                    u127(p126)
+                end
+            end)
+        end
+    end
+    u21:WaitForChild("PlayerGui");
+    (function() --[[ Name: collectPCGui, Line 124 ]]
+        --[[
+        Upvalues:
+            [1] = u21
+            [2] = u50
+        --]]
+        local v128 = u21:FindFirstChildOfClass("PlayerGui")
+        if v128 then
+            local v129 = v128:FindFirstChild("Survivor") or v128:FindFirstChild("Survivor-con")
+            if v129 then
+                local v130 = v129:FindFirstChild("Gen")
+                if v130 then
+                    local v131 = v130:FindFirstChild("ItemFrame")
+                    if v131 then
+                        local v132 = v131:FindFirstChild("Gui")
+                        if v132 then
+                            local v133 = u50.pc
+                            table.insert(v133, v132)
+                        end
+                    end
+                else
+                    return
+                end
+            else
+                return
+            end
+        else
+            return
+        end
+    end)()
+    local v134 = u21:FindFirstChildOfClass("PlayerGui")
+    if v134 then
+        local v135 = v134:FindFirstChild("Survivor-mob")
+        if v135 then
+            u127(v135)
+        else
+            v134.ChildAdded:Connect(function(p136) --[[ Line: 419 ]]
+                --[[
+                Upvalues:
+                    [1] = u127
+                --]]
+                if p136.Name == "Survivor-mob" then
+                    u127(p136)
+                end
+            end)
+        end
+    end
+    u2.InputBegan:Connect(function(p137, p138) --[[ Line: 428 ]]
+        --[[
+        Upvalues:
+            [1] = u49
+            [2] = u38
+            [3] = u39
+            [4] = u62
+            [5] = u25
+            [6] = u40
+            [7] = u17
+            [8] = u46
+            [9] = u11
+            [10] = u81
+        --]]
+        if not p138 then
+            if p137.UserInputType == Enum.UserInputType.MouseButton2 then
+                if u49 then
+                    return
+                end
+                if tick() < u38 or u39 then
+                    return
+                end
+                if u62() or u25.Health < u25.MaxHealth * 0.5 then
+                    return
+                end
+                if tick() - u40 < u17 then
+                    return
+                end
+                u46 = u11
+                u81(true)
+            end
+            if p137.UserInputType == Enum.UserInputType.Gamepad1 and p137.KeyCode == Enum.KeyCode.ButtonL2 then
+                if u49 then
+                    return
+                end
+                if tick() < u38 or u39 then
+                    return
+                end
+                if u62() or u25.Health < u25.MaxHealth * 0.5 then
+                    return
+                end
+                if tick() - u40 < u17 then
+                    return
+                end
+                u46 = u11
+                u81(true)
+            end
+        end
+    end)
+    u2.InputBegan:Connect(function(p139, p140) --[[ Line: 452 ]]
+        --[[
+        Upvalues:
+            [1] = u43
+            [2] = u44
+            [3] = u46
+            [4] = u49
+            [5] = u38
+            [6] = u39
+            [7] = u40
+            [8] = u17
+            [9] = u24
+            [10] = u8
+            [11] = u81
+        --]]
+        if not p140 then
+            if p139.UserInputType == Enum.UserInputType.MouseButton1 and (u43 or u44) and u46 then
+                if u49 then
+                    return
+                end
+                local v141 = tick()
+                if v141 < u38 or u39 then
+                    return
+                end
+                if v141 - u40 < u17 then
+                    return
+                end
+                u40 = v141
+                u8:FireServer(u46, u24.CFrame.LookVector)
+                u81(false, true)
+            end
+            if p139.UserInputType == Enum.UserInputType.Gamepad1 and (p139.KeyCode == Enum.KeyCode.ButtonR2 and (u43 or u44)) and u46 then
+                if u49 then
+                    return
+                end
+                local v142 = tick()
+                if v142 < u38 or u39 then
+                    return
+                end
+                if v142 - u40 < u17 then
+                    return
+                end
+                u40 = v142
+                u8:FireServer(u46, u24.CFrame.LookVector)
+                u81(false, true)
+            end
+        end
+    end)
+    u2.InputEnded:Connect(function(p143, p144) --[[ Line: 478 ]]
+        --[[
+        Upvalues:
+            [1] = u44
+            [2] = u81
+        --]]
+        if not p144 then
+            if p143.UserInputType == Enum.UserInputType.MouseButton2 and not u44 then
+                u81(false)
+            end
+            if p143.UserInputType == Enum.UserInputType.Gamepad1 and (p143.KeyCode == Enum.KeyCode.ButtonL2 and not u44) then
+                u81(false)
+            end
+        end
+    end)
+    u25:GetPropertyChangedSignal("Health"):Connect(function() --[[ Line: 494 ]]
+        --[[
+        Upvalues:
+            [1] = u43
+            [2] = u44
+            [3] = u81
+        --]]
+        if u43 or u44 then
+            u81(false)
+        end
+    end)
+    u8.OnClientEvent:Connect(function(p145) --[[ Line: 500 ]]
+        --[[
+        Upvalues:
+            [1] = u28
+            [2] = u27
+        --]]
+        if p145 == "SelfDamage" then
+            if u28 then
+                u28:Play()
+                return
+            end
+        elseif p145 == "Shoot" and u27 then
+            u27:Play()
+        end
+    end)
+    u7.OnClientEvent:Connect(function() --[[ Line: 508 ]]
+        --[[
+        Upvalues:
+            [1] = u86
+        --]]
+        u86(4)
+    end)
+    u5:GetInstanceAddedSignal("Silenced"):Connect(function(p146) --[[ Line: 512 ]]
+        --[[
+        Upvalues:
+            [1] = u22
+            [2] = u49
+            [3] = u59
+            [4] = u43
+            [5] = u44
+            [6] = u81
+        --]]
+        if p146 == u22 then
+            u49 = true
+            u59()
+            if u43 or u44 then
+                u81(false)
+            end
+        end
+    end)
+    u5:GetInstanceRemovedSignal("Silenced"):Connect(function(p147) --[[ Line: 522 ]]
+        --[[
+        Upvalues:
+            [1] = u22
+            [2] = u49
+            [3] = u59
+        --]]
+        if p147 == u22 then
+            u49 = false
+            u59()
+        end
+    end)
+    u49 = u5:HasTag(u22, "Silenced")
+    u59()
+    u21.CharacterAdded:Connect(function(p148) --[[ Line: 532 ]]
+        --[[
+        Upvalues:
+            [1] = u22
+            [2] = u23
+            [3] = u25
+            [4] = u49
+            [5] = u5
+            [6] = u59
+            [7] = u35
+        --]]
+        u22 = p148
+        u23 = u22:WaitForChild("HumanoidRootPart")
+        u25 = u22:WaitForChild("Humanoid")
+        u49 = u5:HasTag(u22, "Silenced")
+        u59()
+        u35()
+    end)
+end
+return v6
